@@ -5,13 +5,17 @@ pyramidVertexColorBuffer,
 cubeVertexPositionBuffer,
 cubeVertexColorBuffer,
 cubeVertexIndexBuffer,
-pTexture,
+crateTextures = [],
 mvMatrixStack = [],
+currentlyPressedKeys = {},
 mvMatrix = mat4.create(),
 pMatrix = mat4.create(),
 xRot = 0,
+xSpeed = 0,
 yRot = 0,
-zRot = 0;
+ySpeed = 0,
+z = -5.0,
+filter = 0,
 lastTime = 0;
 
 function webGLStart() {
@@ -23,33 +27,90 @@ function webGLStart() {
 
 	gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
 	gl.enable( gl.DEPTH_TEST );
+
+	document.onkeydown = handleKeyDown;
+	document.onkeyup = handleKeyUp;
+
 	tick();
 }
 
 function initTexture() {
-	pTexture = gl.createTexture();
-	pTexture.image = new Image();
-	pTexture.image.crossOrigin = "anonymous";
-	pTexture.image.onload = function() {
-		handleLoadedTexture( pTexture );
+	var crateImage = new Image();
+
+	for ( var i = 0; i < 3; i++ ) {
+		var texture = gl.createTexture();
+		texture.image = crateImage;
+		texture.image.crossOrigin = "anonymous";
+		crateTextures.push( texture );
+	}
+	crateImage.onload = function() {
+		handleLoadedTexture( crateTextures );
 	}
 
-	pTexture.image.src = "patt.jpg";
+	crateImage.src = "patt.jpg";
+}
+
+function handleKeyDown( e ) {
+	currentlyPressedKeys[ e.keyCode ] = true;
+
+	if ( String.fromCharCode( e.keyCode ) == "F" ) {
+		filter += 1;
+		if ( filter === 3 ) {
+			filter = 0;
+		}
+	}
+}
+
+function handleKeyUp( e ) {
+	currentlyPressedKeys[ e.keyCode ] = false;
 }
 
 function handleLoadedTexture( texture ) {
-	gl.bindTexture( gl.TEXTURE_2D, texture );
 	gl.pixelStorei( gl.UNPACK_FLIP_Y_WEBGL, true );
-	gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image );
+
+	gl.bindTexture( gl.TEXTURE_2D, crateTextures[ 0 ] );
+	gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, crateTextures[ 0 ].image );
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	
+	gl.bindTexture( gl.TEXTURE_2D, crateTextures[ 1 ] );
+	gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, crateTextures[ 1 ].image );
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+	
+		gl.bindTexture( gl.TEXTURE_2D, crateTextures[ 2 ] );
+	gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, crateTextures[ 2 ].image );
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+	gl.generateMipmap( gl.TEXTURE_2D );
+	
+
 	gl.bindTexture( gl.TEXTURE_2D, null );
 }
 
 function tick() {
 	requestAnimFrame( tick );
+	handleKeys();
 	drawScene();
 	animate();
+}
+
+function handleKeys() {
+	if ( currentlyPressedKeys[ 38 ] ) {
+		//
+		z -=  0.05;
+	}
+	if ( currentlyPressedKeys[ 40 ] ) {
+		z += 0.05;
+	}
+	if ( currentlyPressedKeys[ 37 ] ) {
+		//left arrow
+		ySpeed -= 1;
+	}
+	if ( currentlyPressedKeys[ 39 ] ) {
+		//right arrow
+		ySpeed += 1;
+	}
 }
 
 function animate() {
@@ -57,9 +118,8 @@ function animate() {
 	if ( lastTime != 0 ) {
 		var elapsed = timeNow - lastTime;
 
-		xRot += ( 90 * elapsed ) / 1000.0;
-		yRot += ( 90 * elapsed ) / 1000.0;
-		zRot += ( 90 * elapsed ) / 1000.0;
+		xRot += ( xSpeed * elapsed ) / 1000.0;
+		yRot += ( ySpeed * elapsed ) / 1000.0;
 	}
 
 	lastTime = timeNow;
@@ -278,11 +338,10 @@ function drawScene() {
 	mat4.perspective( 45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix );
 	mat4.identity( mvMatrix );
 
-	mat4.translate( mvMatrix, [ 0.0, 0.0, -5.1 ] );
+	mat4.translate( mvMatrix, [ 0.0, 0.0, z ] );
 
 	mat4.rotate( mvMatrix, degToRad( xRot ), [ 1, 0, 0 ] );
 	mat4.rotate( mvMatrix, degToRad( yRot ), [ 0, 1, 0 ] );
-	mat4.rotate( mvMatrix, degToRad( zRot ), [ 0, 0, 1 ] );
 
 	gl.bindBuffer( gl.ARRAY_BUFFER, cubeVertexPositionBuffer );
 	gl.vertexAttribPointer( shaderProgram.vertexPositionAttribute, cubeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0 );
@@ -291,7 +350,7 @@ function drawScene() {
 	gl.vertexAttribPointer( shaderProgram.textureCoordAttribute, cubeVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0 );
 
 	gl.activeTexture( gl.TEXTURE0 );
-	gl.bindTexture( gl.TEXTURE_2D, pTexture );
+	gl.bindTexture( gl.TEXTURE_2D, crateTextures[ filter ] );
 	gl.uniform1i( shaderProgram.samplerUniform, 0 );
 
 	gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer );
