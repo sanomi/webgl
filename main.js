@@ -34,6 +34,18 @@ function webGLStart() {
 	tick();
 }
 
+function resize(canvas) {
+  var displayWidth  = canvas.clientWidth;
+  var displayHeight = canvas.clientHeight;
+ 
+  if (canvas.width  != displayWidth ||
+      canvas.height != displayHeight) {
+ 
+    canvas.width  = displayWidth;
+    canvas.height = displayHeight;
+  }
+}
+
 function initTexture() {
 	var crateImage = new Image();
 
@@ -396,8 +408,10 @@ function initBuffers() {
 function drawScene() {
 	gl.viewport( 0, 0, gl.viewportWidth, gl.viewportHeight );
 	gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
-	
-	mat4.perspective( 45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix );
+
+	var aspect = canvas.clientWidth / canvas.clientHeight;
+	//perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
+	mat4.perspective( 45, aspect, 0.1, 100.0, pMatrix );
 	mat4.identity( mvMatrix );
 
 	mat4.translate( mvMatrix, [ 0.0, 0.0, z ] );
