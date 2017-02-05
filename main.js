@@ -10,10 +10,10 @@ mvMatrixStack = [],
 currentlyPressedKeys = {},
 mvMatrix = mat4.create(),
 pMatrix = mat4.create(),
-xRot = 0,
-xSpeed = 0,
-yRot = 0,
-ySpeed = 0,
+xRot = 4,
+xSpeed = 4,
+yRot = 4,
+ySpeed = 4,
 z = -5.0,
 filter = 0,
 lastTime = 0;
@@ -206,6 +206,7 @@ function getShader( gl, id ) {
 	return shader;
 }
 
+
 function initShaders() {
 	var fragmentShader = getShader( gl, "shader-fs" );
 	var vertexShader = getShader( gl, "shader-vs" );
@@ -240,7 +241,7 @@ function initShaders() {
 	shaderProgram.ambientColorUniform = gl.getUniformLocation(shaderProgram, "uAmbientColor");
 	shaderProgram.lightingDirectionUniform = gl.getUniformLocation(shaderProgram, "uLightingDirection");
 	shaderProgram.directionalColorUniform = gl.getUniformLocation(shaderProgram, "uDirectionalColor");
-
+	shaderProgram.alphaUniform = gl.getUniformLocation( shaderProgram, "uAlpha" );
 }
 
 function setMatrixUniforms() {
@@ -463,6 +464,16 @@ function drawScene() {
 
     }
 
+    var blending = document.getElementById( "blending" ).checked;
+    if ( blending ) {
+    	gl.blendFunc( gl.SRC_ALPHA, gl.ONE );
+    	gl.enable( gl.BLEND );
+    	gl.disable( gl.DEPTH_TEST );
+    	gl.uniform1f( shaderProgram.alphaUniform, parseFloat( document.getElementById( "alpha" ).value ) );
+    } else {
+    	gl.disable( gl.BLEND );
+    	gl.enable( gl.DEPTH_TEST );
+    }
 
 	gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer );
 	setMatrixUniforms();

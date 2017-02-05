@@ -1,5 +1,6 @@
 <html>
 	<head>
+		<title>Spinning Cube</title>
 		<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
 		<script type="text/javascript" src="webgl-utils.js"></script>
 		<script type="text/javascript" src="main.js"></script>
@@ -10,11 +11,12 @@
 			varying vec2 vTextureCoord;
 			varying vec3 vLightWeighting;
 
+			uniform float uAlpha;
 			uniform sampler2D uSampler;
 
 			void main( void ) {
 				vec4 textureColor = texture2D( uSampler, vec2( vTextureCoord.s, vTextureCoord.t ) );
-			    gl_FragColor = vec4( textureColor.rgb * vLightWeighting, textureColor.a );
+			    gl_FragColor = vec4( textureColor.rgb * vLightWeighting, textureColor.a * uAlpha );
 			}
 		</script>
 
@@ -98,7 +100,8 @@
 				</div>
 
 				<div class="controls">
-				<input type="checkbox" id="lighting" checked /> <span>Use lighting</span>
+			<input type="checkbox" id="lighting" checked /> <span>Use lighting</span>				<input type="checkbox" id="blending" checked /> <span>Use blending</span>Alpha level <input type="text" id="alpha" value="0.5" /><br/>
+
 				</div>
 			</div>
 			<div class="controls">
